@@ -22,6 +22,11 @@ struct DataSet{
     int  size;
 };
 
+struct Result{
+    float MaxValue;
+    float KernelExecutionTime;
+};
+
 /*
 DataSet* createDeviceDataset(DataSet host){
     DataSet* device_dataset = (DataSet*)malloc(sizeof(DataSet));
@@ -77,7 +82,7 @@ __global__ void Max_Interleaved_Addressing_Shared(float* data, int data_size){
     if (idx == 0) data[0] = sdata[0];
 }
 
-float calculateMaxValue(DataSet data){
+Result calculateMaxValue(DataSet data){
     float* device_data;
     cudaEvent_t start, stop;
     cudaEventCreate(&start);
@@ -95,11 +100,12 @@ float calculateMaxValue(DataSet data){
 
     float milliseconds = 0;
     cudaEventElapsedTime(&milliseconds, start, stop);
-    printf("Kernel Executed in %.6g\n", milliseconds);
 
     float max_value;
     gpuErrchk(cudaMemcpy(&max_value, device_data, sizeof(float), cudaMemcpyDeviceToHost));
-    return max_value;
+    
+    Result r = {max_value, milliseconds};
+    return r;
 }
 
 void printDataSet(DataSet data){
@@ -115,6 +121,8 @@ int main(int argc, char** argv){
     srand(time(nullptr));
     DataSet random = generateRandomDataSet(10);
     printDataSet(random);
-    float max = calculateMaxValue(random);
-    printf("The maximum value is: %g", max);
+    Result r = calculateMaxValue(random);
+    printf("The maximum value is: %g\n", r.MaxValue);
+    printf("Kernel Executed in %.6g\n", r.KernelExecutionTime);
+
 }
