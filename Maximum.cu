@@ -15,7 +15,7 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
 }
 
 struct Startup{
-    int random_range = 100;
+    int random_range = INT_MAX;
     int threads_per_block = MAX_CUDA_THREADS_PER_BLOCK;
 } startup;
 
@@ -57,11 +57,12 @@ __global__ void Max_Interleaved_Addressing_Global(float* data, int data_size){
 __global__ void Max_Interleaved_Addressing_Shared(float* data, int data_size){
     int idx = blockDim.x * blockIdx.x + threadIdx.x;
     __shared__ float sdata[MAX_CUDA_THREADS_PER_BLOCK];
-    /*copy to shared memory*/
-    sdata[threadIdx.x] = data[idx];
-    __syncthreads();
-
     if (idx < data_size){
+
+        /*copy to shared memory*/
+        sdata[threadIdx.x] = data[idx];
+        __syncthreads();
+
         for(int stride=1; stride < blockDim.x; stride *= 2) {
             if (threadIdx.x % (2*stride) == 0) {
                 float lhs = sdata[threadIdx.x];
@@ -78,11 +79,12 @@ __global__ void Max_Interleaved_Addressing_Shared(float* data, int data_size){
 __global__ void Max_Sequential_Addressing_Shared(float* data, int data_size){
     int idx = blockDim.x * blockIdx.x + threadIdx.x;
     __shared__ float sdata[MAX_CUDA_THREADS_PER_BLOCK];
-    /*copy to shared memory*/
-    sdata[threadIdx.x] = data[idx];
-    __syncthreads();
-
     if (idx < data_size){
+
+        /*copy to shared memory*/
+        sdata[threadIdx.x] = data[idx];
+        __syncthreads();
+
         for(int stride=blockDim.x/2; stride > 0; stride /= 2) {
             if (threadIdx.x < stride) {
                 float lhs = sdata[threadIdx.x];
@@ -97,7 +99,8 @@ __global__ void Max_Sequential_Addressing_Shared(float* data, int data_size){
 
 const int Algorithm_Count = 3;
 typedef void (*Kernel)(float *, int);
-const Kernel Algorithm[Algorithm_Count] = {Max_Interleaved_Addressing_Global, Max_Interleaved_Addressing_Shared, Max_Sequential_Addressing_Shared};
+const char* Algorithm_Name[Algorithm_Count]= {"Max_Interleaved_Addressing_Global", "Max_Interleaved_Addressing_Shared", "Max_Sequential_Addressing_Shared"};
+const Kernel Algorithm[Algorithm_Count]    = { Max_Interleaved_Addressing_Global,   Max_Interleaved_Addressing_Shared,   Max_Sequential_Addressing_Shared};
 
 Result calculateMaxValue(DataSet data, Kernel algorithm){
     float* device_data;
@@ -120,7 +123,8 @@ Result calculateMaxValue(DataSet data, Kernel algorithm){
 
     float max_value;
     gpuErrchk(cudaMemcpy(&max_value, device_data, sizeof(float), cudaMemcpyDeviceToHost));
-    
+    gpuErrchk(cudaFree(device_data));
+
     Result r = {max_value, milliseconds};
     return r;
 }
@@ -135,16 +139,26 @@ void printDataSet(DataSet data){
     printf("\n");
 }
 
+void benchmarkCSV(){
+    /*Print Headers*/
+    printf("Elements, ");
+    for (int algoID = 0; algoID < Algorithm_Count; algoID++)
+        printf("%s, ", Algorithm_Name[algoID]);
+    printf("\n");
+    /*Benchmark*/
+    for (int dataSize = 1024; dataSize < INT_MAX; dataSize*=2){
+        DataSet random = generateRandomDataSet(dataSize);
+        printf("%d, ", dataSize);
+        for (int algoID = 0; algoID < Algorithm_Count; algoID++) {
+            Result r = calculateMaxValue(random, Algorithm[algoID]);
+            printf("%g, ", r.KernelExecutionTime);
+        }
+        printf("\n");
+        free(random.values);
+    }
+}
 
 int main(int argc, char** argv){
     srand(time(nullptr));
-    DataSet random = generateRandomDataSet(10);
-
-    for (int algoID = 0; algoID < Algorithm_Count; algoID++) {
-    Result r = calculateMaxValue(random, Algorithm[algoID]);
-    
-    printf("The maximum value is: %g\n", r.MaxValue);
-    printf("Kernel Executed in %.6g\n", r.KernelExecutionTime);
-    }
-
+    benchmarkCSV();
 }
