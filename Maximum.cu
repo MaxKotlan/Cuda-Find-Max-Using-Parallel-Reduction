@@ -22,18 +22,15 @@ struct DataSet{
     int  size;
 };
 
+/*
 DataSet* createDeviceDataset(DataSet host){
-    DataSet host_copy = {nullptr, host.size};
-    gpuErrchk(cudaMalloc((void **)&host_copy.values,  host.size*sizeof(float));
-    gpuErrchk(cudaMalloc((void **)&host_copy,  host.size*sizeof(float));
-
     DataSet* device_dataset = (DataSet*)malloc(sizeof(DataSet));
-    gpuErrchk(cudaMalloc((void **)&host_copy,  sizeof(DataSet));
-    gpuErrchk(cudaMalloc((void **)&device_dataset,  sizeof(DataSet));
+    gpuErrchk(cudaMalloc((void **)&host_copy,  sizeof(DataSet)));
+    gpuErrchk(cudaMalloc((void **)&device_dataset,  sizeof(DataSet)));
     gpuErrchk(cudaMemcpy(device_d, input.values, sizeOfDataSet(input) , cudaMemcpyHostToDevice));
     return device_dataset;
 
-}
+}*/
 
 DataSet generateRandomDataSet(int size){
     DataSet data;
@@ -46,21 +43,26 @@ DataSet generateRandomDataSet(int size){
     return data;
 }
 
-__global__ void MaxValue_1(DataSet data){
+__global__ void MaxValue_1(float* data, int data_size){
     int idx = blockDim.x * blockIdx.x + threadIdx.x;
+    if (idx < data_size){
+        true;
+    }
     //input[idx] > input[idx+1]
 }
 
 float calculateMaxValue(DataSet data){
     float* device_data;
-
     cudaEvent_t start, stop;
     cudaEventCreate(&start);
     cudaEventCreate(&stop);    
 
+    gpuErrchk(cudaMalloc((void **)&device_data,  sizeof(float)*data.size));
+    gpuErrchk(cudaMalloc((void **)&data.values,  sizeof(float)*data.size));
+
     int threads_needed = data.size;
     cudaEventRecord(start);
-    MaxValue_1<<< threads_needed/ startup.threads_per_block + 1, startup.threads_per_block >>>(device_data);
+    MaxValue_1<<< threads_needed/ startup.threads_per_block + 1, startup.threads_per_block >>>(device_data, data.size);
     cudaEventRecord(stop);
     cudaEventSynchronize(stop);
 
