@@ -43,7 +43,7 @@ DataSet generateRandomDataSet(int size){
     return data;
 }
 
-__global__ void MaxValue_1(float* data, int data_size){
+__global__ void Max_Interleaved_Addressing_Global(float* data, int data_size){
     int idx = blockDim.x * blockIdx.x + threadIdx.x;
     if (idx < data_size){
         for(int stride=1; stride < data_size; stride *= 2) {
@@ -55,6 +55,26 @@ __global__ void MaxValue_1(float* data, int data_size){
             __syncthreads();
         }
     }
+}
+
+__global__ void Max_Interleaved_Addressing_Shared(float* data, int data_size){
+    int idx = blockDim.x * blockIdx.x + threadIdx.x;
+    extern __shared__ float sdata[];
+    /*copy to shared memory*/
+    sdata[threadIdx.x] = data[idx];
+    __syncthreads();
+
+    if (idx < data_size){
+        for(int stride=1; stride < blockDim.x; stride *= 2) {
+            if (threadIdx.x % (2*stride) == 0) {
+                float lhs = sdata[threadIdx.x];
+                float rhs = sdata[threadIdx.x + stride];
+                sdata[threadIdx.x] = lhs < rhs ? rhs : lhs;
+            }
+            __syncthreads();
+        }
+    }
+    if (idx == 0) data[0] = sdata[0];
 }
 
 float calculateMaxValue(DataSet data){
@@ -69,10 +89,9 @@ float calculateMaxValue(DataSet data){
 
     int threads_needed = data.size;
     cudaEventRecord(start);
-    MaxValue_1<<< threads_needed/ startup.threads_per_block + 1, startup.threads_per_block >>>(device_data, data.size);
+    Max_Interleaved_Addressing_Shared<<< threads_needed/ startup.threads_per_block + 1, startup.threads_per_block, sizeof(float)*startup.threads_per_block>>>(device_data, data.size);
     cudaEventRecord(stop);
-    gpuErrchk(cudaGetLastError());
-    cudaEventSynchronize(stop);
+    gpuErrchk(cudaEventSynchronize(stop));
 
     float milliseconds = 0;
     cudaEventElapsedTime(&milliseconds, start, stop);
