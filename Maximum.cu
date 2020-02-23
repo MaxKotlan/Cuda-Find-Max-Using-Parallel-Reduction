@@ -13,7 +13,7 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
 }
 
 struct Startup{
-    int random_range = 50;
+    int random_range = 100;
     int threads_per_block = 1024;
 } startup;
 
@@ -47,8 +47,11 @@ __global__ void MaxValue_1(float* data, int data_size){
     int idx = blockDim.x * blockIdx.x + threadIdx.x;
     if (idx < data_size){
         for(int stride=1; stride < data_size; stride *= 2) {
-            if (idx % (2*stride) == 0)
-                data[idx] += data[idx + stride];
+            if (idx % (2*stride) == 0) {
+                float lhs = data[idx];
+                float rhs = data[idx + stride];
+                data[idx] = lhs < rhs ? rhs : lhs;
+            }
             __syncthreads();
         }
     }
@@ -61,7 +64,8 @@ float calculateMaxValue(DataSet data){
     cudaEventCreate(&stop);    
 
     gpuErrchk(cudaMalloc((void **)&device_data,  sizeof(float)*data.size));
-    gpuErrchk(cudaMalloc((void **)&data.values,  sizeof(float)*data.size));
+    gpuErrchk(cudaMemcpy(device_data, data.values, sizeof(float)*data.size, cudaMemcpyHostToDevice));
+
 
     int threads_needed = data.size;
     cudaEventRecord(start);
@@ -89,7 +93,9 @@ void printDataSet(DataSet data){
 
 
 int main(int argc, char** argv){
-    DataSet random = generateRandomDataSet(10000);
+    srand(time(nullptr));
+    DataSet random = generateRandomDataSet(10);
+    printDataSet(random);
     float max = calculateMaxValue(random);
     printf("The maximum value is: %g", max);
 }
