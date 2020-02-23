@@ -46,9 +46,12 @@ DataSet generateRandomDataSet(int size){
 __global__ void MaxValue_1(float* data, int data_size){
     int idx = blockDim.x * blockIdx.x + threadIdx.x;
     if (idx < data_size){
-        true;
+        for(int stride=1; stride < data_size; stride *= 2) {
+            if (idx % (2*stride) == 0)
+                data[idx] += data[idx + stride];
+            __syncthreads();
+        }
     }
-    //input[idx] > input[idx+1]
 }
 
 float calculateMaxValue(DataSet data){
@@ -64,12 +67,16 @@ float calculateMaxValue(DataSet data){
     cudaEventRecord(start);
     MaxValue_1<<< threads_needed/ startup.threads_per_block + 1, startup.threads_per_block >>>(device_data, data.size);
     cudaEventRecord(stop);
+    gpuErrchk(cudaGetLastError());
     cudaEventSynchronize(stop);
 
     float milliseconds = 0;
     cudaEventElapsedTime(&milliseconds, start, stop);
     printf("Kernel Executed in %.6g\n", milliseconds);
-    return milliseconds;
+
+    float max_value;
+    gpuErrchk(cudaMemcpy(&max_value, device_data, sizeof(float), cudaMemcpyDeviceToHost));
+    return max_value;
 }
 
 void printDataSet(DataSet data){
@@ -84,5 +91,5 @@ void printDataSet(DataSet data){
 int main(int argc, char** argv){
     DataSet random = generateRandomDataSet(10000);
     float max = calculateMaxValue(random);
-    //printDataSet(random);
+    printf("The maximum value is: %g", max);
 }
