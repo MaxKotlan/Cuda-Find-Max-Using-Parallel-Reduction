@@ -97,6 +97,7 @@ __global__ void Max_Sequential_Addressing_Shared(float* data, int data_size){
     if (idx == 0) data[0] = sdata[0];
 }
 
+/*Algorithm Information. Includes pointers to different kernels, so they can be executed dynamically*/
 const int Algorithm_Count = 3;
 typedef void (*Kernel)(float *, int);
 const char* Algorithm_Name[Algorithm_Count]= {"Max_Interleaved_Addressing_Global", "Max_Interleaved_Addressing_Shared", "Max_Sequential_Addressing_Shared"};
@@ -146,7 +147,7 @@ void benchmarkCSV(){
         printf("%s, ", Algorithm_Name[algoID]);
     printf("\n");
     /*Benchmark*/
-    for (int dataSize = 1024; dataSize < INT_MAX; dataSize*=2){
+    for (int dataSize = 2; dataSize < INT_MAX; dataSize*=2){
         DataSet random = generateRandomDataSet(dataSize);
         printf("%d, ", dataSize);
         for (int algoID = 0; algoID < Algorithm_Count; algoID++) {
