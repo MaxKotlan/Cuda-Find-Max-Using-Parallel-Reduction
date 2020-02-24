@@ -10,7 +10,7 @@ Parallel Reduction is a common way of making associative operations (operations 
 The following graphs were created in Excel from data generated through the benchmark mode of the application
 
 ![Maximum Value Algorithm Linear Scale](img/linear.png)
-![Maximum Value Algorithm Logarithmic Scale](img/logarithmic.png)
+![Maximum Value Algorithm Logarithmic Scale](img/Logarithmic.png)
 
 Three algorithms were tested in this benchmark.
 
