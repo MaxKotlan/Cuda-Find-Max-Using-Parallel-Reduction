@@ -1,10 +1,10 @@
 # Maximum Value Algorithm Variants Using Parallel Reduction
 
-The purpose of this program is to benchmark different variants of an algorithm for finding the maximum value in a set of elements. The data sets in this program are all randomly generated using rand. This program outputs the preformance of each algorithm to the command line in csv format. 
+The purpose of this program is to benchmark different variants of an algorithm for finding the maximum value in a set of elements. The data sets in this program are all randomly generated using rand. This program outputs the performance of each algorithm to the command line in csv format. 
 
 ## What is Parallel Reduction?
 
-Parallel Reduction is a common way of making associative operations (operations that can be preformed in any order, such as addition, multiplication, etc.) run in Parallel.
+Parallel Reduction is a common way of making associative operations (operations that can be performed in any order, such as addition, multiplication, etc.) run in Parallel.
 
 ## RESULTS
 The following graphs were created in Excel from data generated through the benchmark mode of the application
