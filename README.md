@@ -4,7 +4,7 @@ The purpose of this program is to benchmark different variants of an algorithm f
 
 ## What is Parallel Reduction?
 
-Parallel Reduction is a common way of making associative operations (operations that can be performed in any order, such as addition, multiplication, etc.) run in Parallel.
+Parallel Reduction is a common design pattern, which is useful for executing associative operations (operations that can be performed in any order, such as addition, multiplication, etc.) in parallel.
 
 ## RESULTS
 The following graphs were created in Excel from data generated through the benchmark mode of the application
